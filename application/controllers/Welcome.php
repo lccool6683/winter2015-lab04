@@ -28,6 +28,7 @@ class Welcome extends Application {
 
         // Build a multi-dimensional array for reporting
         $orders = array();
+        $completed = $this->orders->some('status', 'c');
         foreach ($completed as $order) {
             $this1 = array(
                 'num' => $order->num,

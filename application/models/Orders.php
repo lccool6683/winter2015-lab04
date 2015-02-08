@@ -10,21 +10,36 @@ class Orders extends MY_Model {
     // constructor
     function __construct() {
         parent::__construct('orders', 'num');
+        $CI = &get_instance();
+        $CI->load->model('orderitems');
+        $CI->load->model('menu');
     }
 
     // add an item to an order
     function add_item($num, $code) {
+        if (($item = $this->orderitems->get($num, $code)) != null)
+        {
+            $item->quantity += 1;
+            $this->orderitems->update($item);
+        }
+        else
+        {
+            $item = $this->orderitems->create();
+            $item->order = $num;
+            $item->item = $code;
+            $item->quantity = 1;
+            
+            $this->orderitems->add($item);
+        }
         
     }
 
     // calculate the total for an order
     function total($num) {
-        $CI = &get_instance();
-        $CI->load->model('orderitems');
-        $CI->load->model('menu');
+
         
         // Retrieve the order
-        $order = $this->get($num);
+
         $orderitems = $this->orderitems->some('order', $num);
         
         $total = 0.0;
@@ -50,7 +65,21 @@ class Orders extends MY_Model {
     // validate an order
     // it must have at least one item from each category
     function validate($num) {
-        return false;
+        $items = $this->orderitems->group($num);
+        
+        $gotem = array();
+        
+        // Loop through all items and set the category that they're in to 1
+        if (count($items) > 0)
+        {
+            foreach ($items as $item)
+            {
+                $menu = $this->menu->get($item->item);
+                $gotem[$menu->category] = 1;
+            }
+        }
+              
+        return isset($gotem['m']) && isset($gotem['d']) && isset($gotem['s']);
     }
 
 }
